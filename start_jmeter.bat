@@ -134,6 +134,7 @@ exit /b
 exit /b
 :update_prop_files <jmeterConf> <instance>
     set jmeterConfVar=/%jmeterConf:\=/%/
+    set jmeterHomeVar=/%jmeterHome:\=/%/
     set jmeterPropertiesFile=%jmeterConf%\instance_properties\jmeter%instance%.properties
     set jmeterCustomProps=%jmeterConf%\custom_properties\custom_jmeter.properties
     call:get_log_time DEBUG "merging custom properties with default jmeter.properties. custom properties take priority if there is a confict."
@@ -222,7 +223,7 @@ if a%isServer% == aserver (
         goto:earlyExit
     )
 )   
-set javaHome="C:\Program Files\Java\jre1.8.0_144\bin\java"
+set javaHome=C:\SWDTOOLS\JDK1.8.0_66\bin\java
 set thisScript=%0
 pushd %~dp0
     set jmeterConf=%cd%
