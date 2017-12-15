@@ -1,0 +1,6 @@
+*.swp
+instance_properties/*.properties
+instance_services/*.*
+keystores/*.*
+.metadata
+.project
