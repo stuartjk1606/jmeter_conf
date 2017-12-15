@@ -12,6 +12,33 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 exit /b
+rem is_it_a_property, find_replace and get_mod_dates are specific to windows shell version and handle the way for loops are dealt with. 
+:is_it_a_property <newString> <oldString> <outputString>
+    set outputString=%3
+    if not "%outputString:~1,1%" == "#" if not "%outputString:~1,1%" == " " if not "%outputString:~1,1%" == "    " (
+            call:find_replace %1 %2 %outputString%
+        )
+    )
+exit /b
+:find_replace <newString> <oldString> <outputString> 
+setlocal
+    set newString=%~1
+    set oldString=%2
+    set outputString=%3
+    setlocal enabledelayedexpansion
+    set "outputString=!outputString:%oldString%=%newString%!"
+    echo %outputString:~1,-1%
+    
+exit /b
+:get_mod_dates <file> <variableName> <searchString>
+    set fileModDate=0
+    for /F "tokens=1,2,*" %%i in ('DIR /T:W %1 ^| findstr "\.%3"') do set fileModDate=%%i %%j
+    set fileModDate=!fileModDate: =!
+    set fileModDate=!fileModDate:/=!
+    set fileModDate=!fileModDate::=!
+    set fileModDate=!fileModDate:~6,2!!fileModDate:~2,2!!fileModDate:~0,2!!fileModDate:~8!
+    set %2=%fileModDate%
+exit /b
 :get_log_time <logLevel> <logMessage>
     set logDateTime=%date:~6,4%/%date:~3,2%/%date:~0,2%-%time:~0,2%:%time:~3,2%:%time:~6,2%
     set logDateTime=%logDateTime: =0%
@@ -33,8 +60,6 @@ exit /b
     
 exit /b
 :check_prop_files <jmeterConf> <jmeterHome> <thisScript>
-    SET jmeterConf=C:\Users\44036736\fdTransformation\fd-group-sapi-testing\jmeter_conf
-    SET jmeterHome=C:\SWDTOOLS\APACHE-JMETER-3.0\bin
     set jmeterConfScript=%thisScript%
     set jmeterPropertiesFile=%jmeterConf%\instance_properties\jmeter%instance%.properties
     set jmeterSourceProps=%jmeterHome%\jmeter.properties
@@ -45,6 +70,7 @@ exit /b
     set userPropertiesFile=%jmeterConf%\instance_properties\user%instance%.properties
     set userSourceProps=%jmeterHome%\user.properties
     set userCustomProps=%jmeterConf%\custom_properties\custom_user.properties
+    set jmeterHostsFile=%jmeterConf%\custom_properties\jmeter_hosts.dat
     call:get_mod_dates %jmeterPropertiesFile% jmeterPropertiesFileDate properties 2> nul
     call:get_mod_dates %jmeterSourceProps% jmeterSourcePropsDate properties 2> nul
     call:get_mod_dates %jmeterCustomProps% jmeterCustomPropsDate properties 2> nul
@@ -55,9 +81,10 @@ exit /b
     call:get_mod_dates %userPropertiesFile% userPropertiesFileDate properties 2> nul
     call:get_mod_dates %userSourceProps% userSourcePropsDate properties 2> nul
     call:get_mod_dates %userCustomProps% userCustomPropsDate properties 2> nul
+    call:get_mod_dates %jmeterHostsFile% jmeterHostsFileDate dat 2> nul
     set needsRebuild=0
     
-    for %%d in (%jmeterSourcePropsDate% %jmeterCustomPropsDate% %jmeterConfScriptDate%) do (
+    for %%d in (%jmeterSourcePropsDate% %jmeterCustomPropsDate% %jmeterConfScriptDate% %jmeterHostsFileDate%) do (
         if %jmeterPropertiesFileDate% lss %%d (
             set /a needsRebuild=1
             call:get_log_time WARN "A source file has been updated since jmeter%instance%.properties was created. Custom properties files will be rebuilt."
@@ -167,35 +194,7 @@ exit /b
     set logDateString=%logDateString: =0%
     set java_opts=-Xms%HEAP% -Xmx%HEAP% -XX:NewSize=128m -XX:MaxNewSize=128m
     call:get_log_time INFO "Starting jmeter %instance% as %instanceType%."
-    echo %javaHome% %java_opts% -XX:+HeapDumpOnOutOfMemoryError -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=50 -XX:MaxTenuringThreshold=2  -XX:+CMSClassUnloadingEnabled -jar %jmeterHome%/ApacheJMeter.jar %jmeterProps% -j %systemLogs%\jmeter_logs\jmeter%instance%-%USERNAME%-%logDateString%-%instanceType%.log -Jlogs_location=%systemLogs% -p %jmeterConf%\instance_properties\jmeter%instance%.properties %jmeterArgs% >> C:\SWDTOOLS\APACHE-JMETER-3.0\bin\jmeter_bat.log
     %javaHome% %java_opts% -XX:+HeapDumpOnOutOfMemoryError -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=50 -XX:MaxTenuringThreshold=2  -XX:+CMSClassUnloadingEnabled -jar %jmeterHome%/ApacheJMeter.jar %jmeterProps% -j %systemLogs%\jmeter_logs\jmeter%instance%-%USERNAME%-%logDateString%-%instanceType%.log -Jlogs_location=%systemLogs% -p %jmeterConf%\instance_properties\jmeter%instance%.properties %jmeterArgs%
-exit /b
-rem is_it_a_property, find_replace and get_mod_dates are specific to windows shell version and handle the way for loops are dealt with. 
-:is_it_a_property <newString> <oldString> <outputString>
-    set outputString=%3
-    if not "%outputString:~1,1%" == "#" if not "%outputString:~1,1%" == " " if not "%outputString:~1,1%" == "    " (
-            call:find_replace %1 %2 %outputString%
-        )
-    )
-exit /b
-:find_replace <newString> <oldString> <outputString> 
-setlocal
-    set newString=%~1
-    set oldString=%2
-    set outputString=%3
-    setlocal enabledelayedexpansion
-    set "outputString=!outputString:%oldString%=%newString%!"
-    echo %outputString:~1,-1%
-    
-exit /b
-:get_mod_dates <file> <variableName> <searchString>
-    set fileModDate=0
-    for /F "tokens=1,2,*" %%i in ('DIR /T:W %1 ^| findstr "\.%3"') do set fileModDate=%%i %%j
-    set fileModDate=!fileModDate: =!
-    set fileModDate=!fileModDate:/=!
-    set fileModDate=!fileModDate::=!
-    set fileModDate=!fileModDate:~6,2!!fileModDate:~2,2!!fileModDate:~0,2!!fileModDate:~8!
-    set %2=%fileModDate%
 exit /b
 :main
 setlocal
@@ -223,7 +222,7 @@ if a%isServer% == aserver (
         goto:earlyExit
     )
 )   
-set javaHome=C:\SWDTOOLS\JDK1.8.0_66\bin\java
+set javaHome="C:\Program Files\Java\jre1.8.0_144\bin\java"
 set thisScript=%0
 pushd %~dp0
     set jmeterConf=%cd%
