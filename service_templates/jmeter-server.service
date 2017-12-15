@@ -1,0 +1,20 @@
+[Unit]
+Description=jmeterserver{instance}
+
+[Service]
+Type=simple
+User=root
+Group=root
+# Load env vars from /etc/default/ and /etc/sysconfig/ if they exist.
+# Prefixing the path with '-' makes it try to load, but if the file doesn't
+# exist, it continues onward.
+EnvironmentFile=-/etc/default/jmeter
+EnvironmentFile=-/etc/sysconfig/jmeter
+ExecStart={jmeter} server {instance}
+Restart=always
+WorkingDirectory=/
+Nice=19
+LimitNOFILE=16384
+
+[Install]
+WantedBy=multi-user.target

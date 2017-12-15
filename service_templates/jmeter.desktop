@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Name=
+Comment=Apache JMeter performance test tool
+Exec=
+Icon=
+Terminal=false
+Type=Application
+Categories=Development
+StartupNotify=true
+
