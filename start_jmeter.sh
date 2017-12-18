@@ -176,7 +176,7 @@ set_rmi() {
 
 fix_file_paths() {
 
-## If custom properties files contain file paths of configured variables is {jmeter_conf}, this sets then as physical path. replicate for any other custom file paths created.
+## If custom properties files contain file paths of configured variables is %jmeter_conf%, this sets then as physical path. replicate for any other custom file paths created.
 
     echo "$(get_log_time) [DEBUG] Updating file paths in jmeter$instance.properties."
 
@@ -187,7 +187,7 @@ fix_file_paths() {
     do
         filePathVar=${filePathVars[$count]}
         filePathValue=${filePathValues[$count]}
-        propFile=$(awk '{ gsub ("{'$filePathVar'}","'$filePathValue'" );print}' $jmeterConf/instance_properties/jmeter$instance.properties)
+        propFile=$(awk '{ gsub ("%'$filePathVar'%","'$filePathValue'" );print}' $jmeterConf/instance_properties/jmeter$instance.properties)
         echo "$propFile" > $jmeterConf/instance_properties/jmeter$instance.properties
     done
 }
