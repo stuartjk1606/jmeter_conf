@@ -1,7 +1,7 @@
 # jmeter_conf
 Shell scripts for both windows and linux allowing custom configuration of jmeter instances, be it many instances or a on locked down machine. Should work on Unix too with the right packages.
 
-util/run_first - goes off and finds your installations of jmeter. Linux uses the first one it finds, windows uses the last one it finds. Best to only have 1 installed at a time.
+utils/run_first - goes off and finds your installations of jmeter. Linux uses the first one it finds, windows uses the last one it finds. Best to only have 1 installed at a time.
                - On linux you can use the home argument to only look in your home directory for jmeter, in case you do not have access to root. Ommiting "home" will not look in /home/* and requires root access.
 
 start_jmeter - checks whether run_first has been executed by ensuring the required directories are available, any problems found and it will not run.
