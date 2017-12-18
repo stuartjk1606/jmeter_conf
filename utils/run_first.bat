@@ -38,18 +38,17 @@ exit /b
 
 	) else (
 		call:get_log_time WARN "No java instance found in C:\Program files\java. Please manually set javaHome in %jmeterConf%\custom_properties\dir_locals.config"
-		echo javaHome=> %jmeterConf%\custom_properties\dir_locals.config
+		echo javaHome=>> %jmeterConf%\custom_properties\dir_locals.config
 		exit /b
 	)
-	for /f " tokens=4 delims=. " %%v in ('%javaExe% -version 2^>^&1 ^| findstr /i "version"') do (
-		set currVersion=%%v
-	)
+	for /f " tokens=4 delims=. " %%v in ('%javaExe% -version 2^>^&1 ^| findstr /i "version"') do set currVersion=%%v
+
 	if %currVersion% lss %minVersion% (
 		call:get_log_time ERR "Java version in %javaHome% is below minimum required for this version of JMeter. Either install a newer version of java or if already installed but not found, please manually set javaHome in %jmeterConf%\custom_properties\dir_locals.config"
-		echo javaHome=> %jmeterConf%\custom_properties\dir_locals.config
+		echo javaHome=>> %jmeterConf%\custom_properties\dir_locals.config
 	) else (
 		call:get_log_time INFO "Java version in %javaHome% is at a high enough version to support this JMeter"
-		echo javaHome=%javaHome%> %jmeterConf%\custom_properties\dir_locals.config
+		echo javaHome=%javaHome%>> %jmeterConf%\custom_properties\dir_locals.config
 	)
 	
 
