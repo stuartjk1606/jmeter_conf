@@ -178,7 +178,7 @@ fix_file_paths() {
 
     echo "$(get_log_time) [DEBUG] Updating file paths in jmeter$instance.properties."
 
-    filePathVars=(jmeter_conf jmeter_home)
+    filePathVars=(jmeterConfVar jmeterHomeVar)
     filePathValues=($jmeterConf $jmeterHome)
 
     for ((count=0 ; count<="${#filePathVars[@]}-1";count++))
