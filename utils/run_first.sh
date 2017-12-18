@@ -1,6 +1,5 @@
 #!/bin/bash
 
-apache2_license() {
 ## Copyright 2017 Stuart Kenworthy
 ## Licensed under the Apache License, Version 2.0 (the "License");
 ## you may not use this file except in compliance with the License.
@@ -11,7 +10,6 @@ apache2_license() {
 ## WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## See the License for the specific language governing permissions and
 ## limitations under the License.
-}
 
 get_log_time() {
 
@@ -73,11 +71,11 @@ echo "$(get_log_time) [INFO] Looking for an instance of jmeter. If more than 1 v
     if [[ $jmeterFound && $jmeterShell && ( $jmeterShell == *"$jmeterFound"* ) ]]
     then
         echo "$(get_log_time) [INFO] Jmeter located in $jmeterFound will be used. If this is wrong, please remove this version and run this script again."
-        sed -i $sedInline 's!jmeterHome=.*!jmeterHome='$jmeterFound'!' $jmeterConf/custom_properties/dir_locals.config
+        echo jmeterHome=$jmeterFound>> $jmeterConf/custom_properties/dir_locals.config
         $useSudo ln -sf $jmeterConf/start_jmeter.sh $runJmeter 2> /dev/null
     else
         echo "$(get_log_time) [ERR] Unable to determine location of a JMeter installation. Please check JMeter is available on this sytem."
-        sed -i $sedInline 's!jmeterHome=.*!jmeterHome='$jmeterFound'!' $jmeterConf/custom_properties/dir_locals.config
+        echo jmeterHome=>> $jmeterConf/custom_properties/dir_locals.config
         $useSudo rm $runJmeter /home/$userName/jmeter 2> /dev/null
         exit
     fi
@@ -111,29 +109,32 @@ fi
 
 if [[ "home" == "$firstArg" && $userName != "root"  ]]
 then
+    systemLogs=/home/$userName/logs/jmeter
     echo "$(get_log_time) [WARN] Only jmeter versions in /home/$userName will be searched."
     useHome="grep /home/$userName"
     searchHome="home/$userName"
     if [[ $(grep systemLogs $jmeterConf/custom_properties/dir_locals.config) != systemLogs=/home/$userName/logs/jmeter ]]
     then
         echo "$(get_log_time) [WARN] systemLogs was not set to user home in dir_locals.config. Setting has been changed so to log to /home/$userName/logs/jmeter"
-        sed -i $sedInline 's!systemLogs=.*!systemLogs=/home/'$userName'/logs/jmeter!' $jmeterConf/custom_properties/dir_locals.config
     fi
     useSudo=
     runJmeter=/home/$userName/jmeter
 elif [[ "home" != "$firstArg" && $userName != "root"  ]]
 then
+    systemLogs=/var/log/jmeter
     if [[ $(grep systemLogs $jmeterConf/custom_properties/dir_locals.config) == "systemLogs=/home/"* ]]
     then
-        echo "$(get_log_time) [WARN] systemLogs was set to a user home directory in dir_locals.config. Setting has been changed so to log to /var/log/jmeter"
-        sed -i $sedInline 's!systemLogs=.*!systemLogs=/var/log/jmeter!' $jmeterConf/custom_properties/dir_locals.config
+       echo "$(get_log_time) [WARN] systemLogs was set to a user home directory in dir_locals.config. Setting has been changed so to log to /var/log/jmeter"
     fi
     echo "$(get_log_time) [WARN] User must be root or have sudo access to run this script, please provide your password for sudo. All versions under /home/ will be ignored."
     checkUser=$(sudo whoami 1> /dev/null && echo $?)
 elif [[ "home" == "$firstArg" && $userName == "root"  ]]
 then
+    systemLogs=/var/log/jmeter
     echo "$(get_log_time) [WARN] Running this script as sudo or root will ignore \"home\"."
 fi
+
+echo systemLogs=$systemLogs> $jmeterConf/custom_properties/dir_locals.config
 
 ## In the event of not home and not using sudo or root, the availability of sudo is checked. If it fails the script fails and returns an ERR.
 ## If successful, or sudo is not as part of the script, log directories, resource location config and shortcuts are created.
