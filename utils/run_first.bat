@@ -14,6 +14,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 exit /b
+
 :get_log_time <logLevel> <logMessage>
     set logDateTime=%date:~6,4%/%date:~3,2%/%date:~0,2%-%time:~0,2%:%time:~3,2%:%time:~6,2%
     set logDateTime=%logDateTime: =0%
@@ -21,6 +22,39 @@ exit /b
     echo %logDateTime% [%logLevel%] %~2
     
 exit /b 
+:check_java <jmeterHome> <jmeterConf>
+
+    call:get_log_time INFO "Checking java version available against jmeter requirements"
+	for /f "tokens=2 delims=." %%a in ('type %jmeterHome%\jmeter.bat ^| findstr /c:"set MINIMAL_VERSION"') do set minVersion=%%a
+	pushd "c:\Program Files\java" 2> nul
+	if errorlevel == 0 (
+		for /f "tokens=*" %%a in ('dir java.exe /b /s') do (
+			set javaExe=%%~sa
+			set javaFound=1
+			pushd !javaExe!\.. 2> nul
+				set javaHome=!cd!\
+			popd
+		)
+
+	) else (
+		call:get_log_time WARN "No java instance found in C:\Program files\java. Please manually set javaHome in %jmeterConf%\custom_properties\dir_locals.config"
+		echo javaHome=> %jmeterConf%\custom_properties\dir_locals.config
+		exit /b
+	)
+	for /f " tokens=4 delims=. " %%v in ('%javaExe% -version 2^>^&1 ^| findstr /i "version"') do (
+		set currVersion=%%v
+	)
+	if %currVersion% lss %minVersion% (
+		call:get_log_time ERR "Java version in %javaHome% is below minimum required for this version of JMeter. Either install a newer version of java or if already installed but not found, please manually set javaHome in %jmeterConf%\custom_properties\dir_locals.config"
+		echo javaHome=> %jmeterConf%\custom_properties\dir_locals.config
+	) else (
+		call:get_log_time INFO "Java version in %javaHome% is at a high enough version to support this JMeter"
+		echo javaHome=%javaHome%> %jmeterConf%\custom_properties\dir_locals.config
+	)
+	
+
+exit /b
+popd
 :setup_directories <jmeterHome> <systemLogs>
     for %%i in ("%jmeterConf%\instance_properties" "%jmeterConf%\instance_services") do (
         call:get_log_time INFO "Creating %%~i"
@@ -71,6 +105,8 @@ exit /b
     popd
     for /f "tokens=*" %%p in ('type %jmeterConf%\custom_properties\dir_locals.config') do set %%p
     call:set_jmeterHome %jmeterConf%
+	call:check_java %jmeterHome% %jmeterConf%
+	
     call:setup_directories %jmeterHome% %systemLogs%
     pause
 exit /b
