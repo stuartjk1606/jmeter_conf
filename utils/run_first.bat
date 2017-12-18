@@ -70,6 +70,7 @@ popd
     pushd %jmeterConf%\..\logs
         set systemLogs=!cd!
     popd
+	mkdir %systemLogs%\jmeter_logs
     if "%errorlevel%" == "0" if not [%systemLogs%] == [] (
         :systemLogs
         echo systemLogs=!systemLogs!>>%jmeterConf%\custom_properties\dir_locals.config

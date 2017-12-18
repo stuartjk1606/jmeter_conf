@@ -1,6 +1,12 @@
 @echo off
+
+setlocal
+setlocal EnableDelayedExpansion
+
 goto:main
+
 :apache2_license
+
 Copyright 2017 Stuart Kenworthy
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -11,26 +17,33 @@ distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
-exit /b
+
+goto:eof
+
 rem is_it_a_property, find_replace and get_mod_dates are specific to windows shell version and handle the way for loops are dealt with. 
+
 :is_it_a_property <newString> <oldString> <outputString>
+
     set outputString=%3
-    if not "%outputString:~1,1%" == "#" if not "%outputString:~1,1%" == " " if not "%outputString:~1,1%" == "    " (
-            call:find_replace %1 %2 %outputString%
-        )
-    )
-exit /b
+    if not "%outputString:~1,1%" == "#" if not "%outputString:~1,1%" == " " if not "%outputString:~1,1%" == "	" (
+		call:find_replace %1 %2 %outputString%
+	)
+
+goto:eof
+
 :find_replace <newString> <oldString> <outputString> 
-setlocal
+
+	setlocal
     set newString=%~1
     set oldString=%2
     set outputString=%3
-    setlocal enabledelayedexpansion
     set "outputString=!outputString:%oldString%=%newString%!"
     echo %outputString:~1,-1%
     
-exit /b
+goto:eof
+
 :get_mod_dates <file> <variableName> <searchString>
+
     set fileModDate=0
     for /F "tokens=1,2,*" %%i in ('DIR /T:W %1 ^| findstr "\.%3"') do set fileModDate=%%i %%j
     set fileModDate=!fileModDate: =!
@@ -38,28 +51,53 @@ exit /b
     set fileModDate=!fileModDate::=!
     set fileModDate=!fileModDate:~6,2!!fileModDate:~2,2!!fileModDate:~0,2!!fileModDate:~8!
     set %2=%fileModDate%
-exit /b
+
+goto:eof
+
 :get_log_time <logLevel> <logMessage>
+
     set logDateTime=%date:~6,4%/%date:~3,2%/%date:~0,2%-%time:~0,2%:%time:~3,2%:%time:~6,2%
     set logDateTime=%logDateTime: =0%
     set logLevel=%1
     echo %logDateTime% [%logLevel%] %~2
     
-exit /b 
+goto:eof 
+
 :check_instance <instance>
+
     set isNumber=1
     for /f "delims=0123456789" %%i in ("%1") do set /a isNumber=%isNumber%-1
     
-exit /b
+goto:eof
+
 :check_directories <systemLogs> <jmeterHome>
+
     if [%systemLogs%] == [] set dirChecks=1
     dir %systemLogs% > nul 2>&1
     set dirChecks=%errorlevel%
     dir %jmeterHome%\keystores > nul 2>&1
     set dirChecks=%dirChecks%%errorlevel%
     
-exit /b
+goto:eof
+
+:check_java <jmeterHome> <javaHome>
+
+	set minVersion=0
+	set currVersion=0
+	for /f "tokens=2 delims=." %%a in ('type %jmeterHome%\jmeter.bat ^| findstr /c:"set MINIMAL_VERSION"') do set minVersion=%%a
+	for /f "tokens=4 delims=. " %%v in ('%javaHome%java -version 2^>^&1 ^| findstr /i "version"') do set currVersion=%%v
+	if %currVersion% lss %minVersion% (
+		call:get_log_time ERR "Java version in %javaHome% (%currVersion%) is below minimum required for this version of JMeter (%minVersion%). Either install a newer version of java or if already installed but not found, please manually set javaHome in %jmeterConf%\custom_properties\dir_locals.config"
+		set javaOk=0
+	) else (
+		call:get_log_time INFO "Java version in %javaHome% (%currVersion%) is at a high enough version to support this JMeter"
+		set javaOk=1
+	)
+
+goto:eof
+
 :check_prop_files <jmeterConf> <jmeterHome> <thisScript>
+
     set jmeterConfScript=%thisScript%
     set jmeterPropertiesFile=%jmeterConf%\instance_properties\jmeter%instance%.properties
     set jmeterSourceProps=%jmeterHome%\jmeter.properties
@@ -88,23 +126,27 @@ exit /b
         if %jmeterPropertiesFileDate% lss %%d (
             set /a needsRebuild=1
             call:get_log_time WARN "A source file has been updated since jmeter%instance%.properties was created. Custom properties files will be rebuilt."
+			goto:eof
         )
     )
     for %%d in (%systemSourcePropsDate% %systemCustomPropsDate% %jmeterConfScriptDate%) do (
         if %systemPropertiesFileDate% lss %%d (
             set /a needsRebuild=1
             call:get_log_time WARN "A source file has been updated since system%instance%.properties was created. Custom properties files will be rebuilt."
+			goto:eof
         )
     )
     for %%d in (%userSourcePropsDate% %userCustomPropsDate% %jmeterConfScriptDate%) do (
         if %userPropertiesFileDate% lss %%d (
             set /a needsRebuild=1
             call:get_log_time WARN "A source file has been updated since user%instance%.properties was created. Custom properties files will be rebuilt."
+			goto:eof
         )
     )
     
-exit /b
+goto:eof
 :import_prop_files <jmeterConf> <jmeterHome> <instance>
+
     set jmeterConfVar=/%jmeterConf:\=/%/
     call:get_log_time DEBUG "Importing default properties files from %jmeterHome%."
     set jmeterPropertiesFile=%jmeterConf%\instance_properties\jmeter%instance%.properties
@@ -131,8 +173,10 @@ exit /b
     )
     call:get_log_time DEBUG "Default properties files imported"
     
-exit /b
+goto:eof
+
 :update_prop_files <jmeterConf> <instance>
+
     set jmeterConfVar=/%jmeterConf:\=/%/
     set jmeterHomeVar=/%jmeterHome:\=/%/
     set jmeterPropertiesFile=%jmeterConf%\instance_properties\jmeter%instance%.properties
@@ -143,7 +187,8 @@ exit /b
             call:is_it_a_property "%jmeterConfVar%" {jmeterConfVar} "%%p"  >> %jmeterPropertiesFile%
         )
     )
-    
+    call:get_log_time DEBUG "merging custom properties with default jmeter.properties complete."
+
     set systemPropertiesFile=%jmeterConf%\instance_properties\system%instance%.properties
     set systemCustomProps=%jmeterConf%\custom_properties\custom_system.properties
     call:get_log_time DEBUG "merging custom properties with default system.properties. custom properties take priority if there is a confict."
@@ -152,6 +197,7 @@ exit /b
             call:is_it_a_property "%jmeterConfVar%" {jmeterConfVar} "%%p"  >> %systemPropertiesFile%
         )
     )
+    call:get_log_time DEBUG "merging custom properties with default system.properties complete."
     set userPropertiesFile=%jmeterConf%\instance_properties\user%instance%.properties
     set userCustomProps=%jmeterConf%\custom_properties\custom_user.properties
     call:get_log_time DEBUG "merging custom properties with default user.properties. custom properties take priority if there is a confict."
@@ -159,16 +205,21 @@ exit /b
         if not ["%%p"] == [""] (
             call:is_it_a_property "%jmeterConfVar%" {jmeterConfVar} "%%p"  >> %userPropertiesFile%
         )
-    )
-    
-exit /b
+	)
+    call:get_log_time DEBUG "merging custom properties with default user.properties complete."
+goto:eof
+
 :set_rmi <jmeterConf> <rmiport> <instance>
+
     call:get_log_time DEBUG "Building list of RMI hosts from jmeter_hosts.dat with port number %rmiPort%"
     set rmiHosts=
     for /f %%h in ( 'type %jmeterConf%\custom_properties\jmeter_hosts.dat' ) do (
         echo %%h | findstr [:] > nul 2>&1
-        if !errorlevel! == 0 set rmiHosts=!rmiHosts!%%h,
-        if not !errorlevel! == 0 set rmiHosts=!rmiHosts!%%h:%rmiPort%,
+        if !errorlevel! == 0 (
+			set rmiHosts=!rmiHosts!%%h,
+		) else (
+			set rmiHosts=!rmiHosts!%%h:%rmiPort%,
+		)
     )
     set rmiHosts=%rmiHosts:~0,-1%
     call:get_log_time DEBUG "Adding list of RMI hosts to jmeter%instance%.properties file."
@@ -177,15 +228,17 @@ exit /b
     set /a bsPort=%baseBsPort%+(0%instance%*10)
     call:get_log_time DEBUG "Adding beanshell server port %bsPort% to jmeter%instance%.properties file."
     echo beanshell.server.port=%bsPort% >> %jmeterConf%/instance_properties/jmeter%instance%.properties
-exit /b
+
+goto:eof
+
 :start_jmeter
+
     if ["%isServer%"] == ["server"] (
         set instanceType=server
         for /f "tokens=1,2,3,4,5,* delims= " %%a in ("%*") do set jmeterArgs=%%f
         set jmeterProps=-Dserver_port=%rmiPort% -s
         set HEAP=%serverHeap%
-    )
-    if not ["%isServer%"] == ["server"] (
+    ) else (
         set instanceType=client
         for /f "tokens=1,2,3,4,* delims= " %%a in ("%*") do set jmeterArgs=%%e
         set jmeterProps=-Jproxy.cert.file=keystores/%USERNAME%.jmeter.keystore
@@ -195,31 +248,31 @@ exit /b
     set logDateString=%logDateString: =0%
     set java_opts=-Xms%HEAP% -Xmx%HEAP% -XX:NewSize=128m -XX:MaxNewSize=128m
     call:get_log_time INFO "Starting jmeter %instance% as %instanceType%."
-    %javaHome% %java_opts% -XX:+HeapDumpOnOutOfMemoryError -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=50 -XX:MaxTenuringThreshold=2  -XX:+CMSClassUnloadingEnabled -jar %jmeterHome%/ApacheJMeter.jar %jmeterProps% -j %systemLogs%\jmeter_logs\jmeter%instance%-%USERNAME%-%logDateString%-%instanceType%.log -Jlogs_location=%systemLogs% -p %jmeterConf%\instance_properties\jmeter%instance%.properties %jmeterArgs%
-exit /b
+    %javaHome%java %java_opts% -XX:+HeapDumpOnOutOfMemoryError -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=50 -XX:MaxTenuringThreshold=2  -XX:+CMSClassUnloadingEnabled -jar %jmeterHome%/ApacheJMeter.jar %jmeterProps% -j %systemLogs%\jmeter_logs\jmeter%instance%-%USERNAME%-%logDateString%-%instanceType%.log -Jlogs_location=%systemLogs% -p %jmeterConf%\instance_properties\jmeter%instance%.properties %jmeterArgs%
+
+goto:eof
+
 :main
-setlocal
-setlocal EnableDelayedExpansion
+
 rem Lets make sure the arguments passed are going to start a valid instance
 if "%1" == "server" (
     set isServer=%1
     set instance=%2
-)
-if not "%1" == "server" (
+) else (
     set instance=%1
 )
 call:check_instance %instance%
 if %isNumber% == 0 (
-    call:get_log_time ERR "Variables are set without an instance number. Please set using %0 {instance} or %0 server {instance}. Please note, server cannot be run without and instance and instance must be 1 or greater.
+    call:get_log_time ERR "Variables are set without an instance number. Please set using %0 {instance} or %0 server {instance}. Please note, server cannot be run without and instance and instance must be 1 or greater."
     goto:earlyExit
 )
 if a%isServer% == aserver (
     if a%instance% == a0 (
-        call:get_log_time ERR "Server instance 0 is invalid. Please set using %0 {instance} or %0 server {instance}. Please note, server cannot be run without and instance and instance must be 1 or greater.
+        call:get_log_time ERR "Server instance 0 is invalid. Please set using %0 {instance} or %0 server {instance}. Please note, server cannot be run without and instance and instance must be 1 or greater."
         goto:earlyExit
     )
     if a%instance% == a (
-        call:get_log_time ERR "No server instance provided. Please set using %0 {instance} or %0 server {instance}. Please note, server cannot be run without and instance and instance must be 1 or greater.
+        call:get_log_time ERR "No server instance provided. Please set using %0 {instance} or %0 server {instance}. Please note, server cannot be run without and instance and instance must be 1 or greater."
         goto:earlyExit
     )
 )   
@@ -231,10 +284,14 @@ popd
 for /f "tokens=*" %%p in ('type %jmeterConf%\custom_properties\dir_locals.config') do set %%p
 for /f "tokens=*" %%p in ('type %jmeterConf%\custom_properties\jmeter_general.config') do set %%p
 call:check_directories %systemLogs% %jmeterHome% %thisScript%
+call:check_java %jmeterHome% %javaHome%
+if %javaOk% == 0 (
+	goto:earlyExit
+)
+
 if %dirChecks% == 00 (
     call:get_log_time INFO "All jmeter logs will be written to %systemLogs% and proxy keystores will be written to %jmeterHome%\keystores."
-)
-if not %dirChecks% == 00 (
+) else (
     call:get_log_time ERR "Jmeter is not set up correctly to use this script. Please run "utils\run_first.sh" before running this script."
     goto:earlyExit
 )
@@ -252,5 +309,7 @@ if %needsRebuild% == 0 (
     call:get_log_time INFO "All custom files are up to date."
 )
 call:start_jmeter %systemLogs% %jmeterConf% %jmeterHome% %*
+
 :earlyExit
-exit /b
+
+goto:eof

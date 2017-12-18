@@ -4,3 +4,4 @@ instance_services/*.*
 keystores/*.*
 .metadata
 .project
+custom_properties/dir_locals.config
