@@ -293,6 +293,7 @@ if %dirChecks% == 00 (
     call:get_log_time INFO "All jmeter logs will be written to %systemLogs% and proxy keystores will be written to %jmeterHome%\keystores."
 ) else (
     call:get_log_time ERR "Jmeter is not set up correctly to use this script. Please run "utils\run_first.sh" before running this script."
+	pause
     goto:earlyExit
 )
 set /a rmiPort=%baseRmiPort%+0%instance%
