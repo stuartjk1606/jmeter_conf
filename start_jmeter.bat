@@ -147,6 +147,7 @@ goto:eof
 goto:eof
 :import_prop_files <jmeterConf> <jmeterHome> <instance>
 
+	set dataLocation=/%dataLocation:\=/%/
     set jmeterConfVar=/%jmeterConf:\=/%/
     call:get_log_time DEBUG "Importing default properties files from %jmeterHome%."
     set jmeterPropertiesFile=%jmeterConf%\instance_properties\jmeter%instance%.properties
