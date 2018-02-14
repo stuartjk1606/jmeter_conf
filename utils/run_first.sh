@@ -47,10 +47,10 @@ setup_directories() {
         $useSudo chmod 777 $jmeterHome/keystores
     fi 2> /dev/null
 
-    if [[ $(ls -ld $systemLogs| grep jmeter | awk '{print $1}') != drwxrwxrwx ]]
+    if [[ $(ls -ld $logsLocation| grep jmeter | awk '{print $1}') != drwxrwxrwx ]]
     then
-        $useSudo mkdir -p $systemLogs
-        $useSudo chmod 777 $systemLogs
+        $useSudo mkdir -p $logsLocation
+        $useSudo chmod 777 $logsLocation
     fi 2> /dev/null
 
 }
@@ -109,32 +109,32 @@ fi
 
 if [[ "home" == "$firstArg" && $userName != "root"  ]]
 then
-    systemLogs=/home/$userName/logs/jmeter
+    logsLocation=/home/$userName/logs/jmeter
     echo "$(get_log_time) [WARN] Only jmeter versions in /home/$userName will be searched."
     useHome="grep /home/$userName"
     searchHome="home/$userName"
-    if [[ $(grep systemLogs $jmeterConf/custom_properties/dir_locals.config) != systemLogs=/home/$userName/logs/jmeter ]]
+    if [[ $(grep logsLocation $jmeterConf/custom_properties/dir_locals.config) != logsLocation=/home/$userName/logs/jmeter ]]
     then
-        echo "$(get_log_time) [WARN] systemLogs was not set to user home in dir_locals.config. Setting has been changed so to log to /home/$userName/logs/jmeter"
+        echo "$(get_log_time) [WARN] logsLocation was not set to user home in dir_locals.config. Setting has been changed so to log to /home/$userName/logs/jmeter"
     fi
     useSudo=
     runJmeter=/home/$userName/jmeter
 elif [[ "home" != "$firstArg" && $userName != "root"  ]]
 then
-    systemLogs=/var/log/jmeter
-    if [[ $(grep systemLogs $jmeterConf/custom_properties/dir_locals.config) == "systemLogs=/home/"* ]]
+    logsLocation=/var/log/jmeter
+    if [[ $(grep logsLocation $jmeterConf/custom_properties/dir_locals.config) == "logsLocation=/home/"* ]]
     then
-       echo "$(get_log_time) [WARN] systemLogs was set to a user home directory in dir_locals.config. Setting has been changed so to log to /var/log/jmeter"
+       echo "$(get_log_time) [WARN] logsLocation was set to a user home directory in dir_locals.config. Setting has been changed so to log to /var/log/jmeter"
     fi
     echo "$(get_log_time) [WARN] User must be root or have sudo access to run this script, please provide your password for sudo. All versions under /home/ will be ignored."
     checkUser=$(sudo whoami 1> /dev/null && echo $?)
 elif [[ "home" == "$firstArg" && $userName == "root"  ]]
 then
-    systemLogs=/var/log/jmeter
+    logsLocation=/var/log/jmeter
     echo "$(get_log_time) [WARN] Running this script as sudo or root will ignore \"home\"."
 fi
 
-echo systemLogs=$systemLogs> $jmeterConf/custom_properties/dir_locals.config
+echo logsLocation=$logsLocation> $jmeterConf/custom_properties/dir_locals.config
 
 ## In the event of not home and not using sudo or root, the availability of sudo is checked. If it fails the script fails and returns an ERR.
 ## If successful, or sudo is not as part of the script, log directories, resource location config and shortcuts are created.
@@ -147,5 +147,5 @@ then
 else
     set_jmeterHome $jmeterConf $useHome
     source $jmeterConf/custom_properties/dir_locals.config
-    setup_directories $systemLogs $jmeterHome $useSudo
+    setup_directories $logsLocation $jmeterHome $useSudo
 fi

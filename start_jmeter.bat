@@ -70,10 +70,10 @@ goto:eof
     
 goto:eof
 
-:check_directories <systemLogs> <jmeterHome>
+:check_directories <logsLocation> <jmeterHome>
 
-    if [%systemLogs%] == [] set dirChecks=1
-    dir %systemLogs% > nul 2>&1
+    if [%logsLocation%] == [] set dirChecks=1
+    dir %logsLocation% > nul 2>&1
     set dirChecks=%dirChecks%%errorlevel%
     dir %jmeterHome%\keystores > nul 2>&1
     set dirChecks=%dirChecks%%errorlevel%
@@ -248,7 +248,7 @@ goto:eof
     set logDateString=%logDateString: =0%
     set java_opts=-Xms%HEAP% -Xmx%HEAP% -XX:NewSize=128m -XX:MaxNewSize=128m
     call:get_log_time INFO "Starting jmeter %instance% as %instanceType%."
-    %javaHome%java %java_opts% -XX:+HeapDumpOnOutOfMemoryError -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=50 -XX:MaxTenuringThreshold=2  -XX:+CMSClassUnloadingEnabled -jar %jmeterHome%/ApacheJMeter.jar %jmeterProps% -j %systemLogs%\jmeter_logs\jmeter%instance%-%USERNAME%-%logDateString%-%instanceType%.log -Jlogs_location=%systemLogs% -p %jmeterConf%\instance_properties\jmeter%instance%.properties %jmeterArgs%
+    %javaHome%java %java_opts% -XX:+HeapDumpOnOutOfMemoryError -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=50 -XX:MaxTenuringThreshold=2  -XX:+CMSClassUnloadingEnabled -jar %jmeterHome%/ApacheJMeter.jar %jmeterProps% -j %logsLocation%\jmeter_logs\jmeter%instance%-%USERNAME%-%logDateString%-%instanceType%.log -JlogsLocation=%logsLocation% -p %jmeterConf%\instance_properties\jmeter%instance%.properties %jmeterArgs%
 
 goto:eof
 
@@ -283,14 +283,14 @@ pushd %~dp0
 popd
 for /f "tokens=*" %%p in ('type %jmeterConf%\custom_properties\dir_locals.config') do set %%p
 for /f "tokens=*" %%p in ('type %jmeterConf%\custom_properties\jmeter_general.config') do set %%p
-call:check_directories %systemLogs% %jmeterHome% %thisScript%
+call:check_directories %logsLocation% %jmeterHome% %thisScript%
 call:check_java %jmeterHome% %javaHome%
 if %javaOk% == 0 (
 	goto:earlyExit
 )
 
 if %dirChecks% == 00 (
-    call:get_log_time INFO "All jmeter logs will be written to %systemLogs% and proxy keystores will be written to %jmeterHome%\keystores."
+    call:get_log_time INFO "All jmeter logs will be written to %logsLocation% and proxy keystores will be written to %jmeterHome%\keystores."
 ) else (
     call:get_log_time ERR "Jmeter is not set up correctly to use this script. Please run "utils\run_first.sh" before running this script."
 	pause
@@ -309,7 +309,7 @@ if not %needsRebuild% == 0 (
 if %needsRebuild% == 0 (
     call:get_log_time INFO "All custom files are up to date."
 )
-call:start_jmeter %systemLogs% %jmeterConf% %jmeterHome% %*
+call:start_jmeter %logsLocation% %jmeterConf% %jmeterHome% %*
 
 :earlyExit
 

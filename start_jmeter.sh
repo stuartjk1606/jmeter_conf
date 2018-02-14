@@ -49,9 +49,9 @@ check_directories() {
         runJmeter=/usr/bin/jmeter
     fi
 
-    if [[ ($(ls -ld $jmeterHome/keystores| grep keystores | awk '{print $1}') == drwxrwxrwx) && ($(ls -ld $systemLogs| grep jmeter | awk '{print $1}') == drwxrwxrwx) && $(ls -l $runJmeter | grep start_jmeter) ]]
+    if [[ ($(ls -ld $jmeterHome/keystores| grep keystores | awk '{print $1}') == drwxrwxrwx) && ($(ls -ld $logsLocation| grep jmeter | awk '{print $1}') == drwxrwxrwx) && $(ls -l $runJmeter | grep start_jmeter) ]]
     then
-        echo "$(get_log_time) [INFO] All jmeter logs will be written to $systemLogs and proxy keystores will be written to $jmeterHome/keystores."
+        echo "$(get_log_time) [INFO] All jmeter logs will be written to $logsLocation and proxy keystores will be written to $jmeterHome/keystores."
     else
         echo "$(get_log_time) [ERR] Jmeter is not set up correctly to use this script. Please run "utils/run_first_as_root.sh" as sudo or root before running this script."
         exit
@@ -226,7 +226,7 @@ start_jmeter() {
 
     echo "$(get_log_time) [INFO] Starting jmeter $instance as $instanceType."
 
-    java -server $java_opts -XX:MaxTenuringThreshold=2 -XX:+CMSClassUnloadingEnabled -jar $jmeterHome/ApacheJMeter.jar $jmeterProps -j $systemLogs/jmeter$instance-$(whoami)-$(date $logDateString)-$instanceType.log -Jlogs_location=$systemLogs -p $jmeterConf/instance_properties/jmeter$instance.properties "$jmeterArgs"
+    java -server $java_opts -XX:MaxTenuringThreshold=2 -XX:+CMSClassUnloadingEnabled -jar $jmeterHome/ApacheJMeter.jar $jmeterProps -j $logsLocation/jmeter$instance-$(whoami)-$(date $logDateString)-$instanceType.log -JlogsLocation=$logsLocation -p $jmeterConf/instance_properties/jmeter$instance.properties "$jmeterArgs"
 
 }
 
@@ -259,8 +259,8 @@ jmeterConf=$(dirname $(realpath $0))
 
 source $jmeterConf/custom_properties/dir_locals.config
 source $jmeterConf/custom_properties/jmeter_general.config
-check_directories $systemLogs $jmeterHome
-#check_directories $systemLogs $jmeterHome $1
+check_directories $logsLocation $jmeterHome
+#check_directories $logsLocation $jmeterHome $1
 
 ## Sets instance number and type
 
@@ -295,5 +295,5 @@ fi
 
 ## Ready
 
-start_jmeter $systemLogs $jmeterConf $jmeterHome $@
+start_jmeter $logsLocation $jmeterConf $jmeterHome $@
 

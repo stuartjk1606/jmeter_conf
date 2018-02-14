@@ -54,35 +54,53 @@ exit /b
 
 exit /b
 popd
-:setup_directories <jmeterHome> <systemLogs>
+:setup_directories <jmeterHome> <logsLocation> <dataLocation>
     for %%i in ("%jmeterConf%\instance_properties" "%jmeterConf%\instance_services") do (
         call:get_log_time INFO "Creating %%~i"
         mkdir %%i 2>nul
     )
     mkdir %jmeterHome%\keystores 2> nul
     
-    dir %systemLogs% > nul 2>&1
-    if "%errorlevel%" == "0" if not [%systemLogs%] == [] (
-        goto:systemLogs
+    dir %logsLocation% > nul 2>&1
+    if "%errorlevel%" == "0" if not [%logsLocation%] == [] (
+        goto:logsLocation
         exit /b
     )
     mkdir %jmeterConf%\..\logs 2> nul
     pushd %jmeterConf%\..\logs
-        set systemLogs=!cd!
+        set logsLocation=!cd!
     popd
-	mkdir %systemLogs%\jmeter_logs
-    pushd %systemLogs%\jmeter_logs
+	mkdir %logsLocation%\jmeter_logs
+    pushd %logsLocation%\jmeter_logs
 	popd
-	if "%errorlevel%" == "0" if not [%systemLogs%] == [] (
-        :systemLogs
-        echo systemLogs=!systemLogs!>>%jmeterConf%\custom_properties\dir_locals.config
-        call:get_log_time INFO "All logs for JMeter will be stored in %systemLogs%. If you require this location to be different, edit the systemLog entry in %jmeterConf%\custom_properties\dir_locals.config"
-        exit /b
-    ) else {
-	    call:get_log_time ERR "Unable to create and verify logging folder. Please ensure user has read write access to $systemLoga$ and sub directories.
+    :logsLocation
+	if "%errorlevel%" == "0" if not [%logsLocation%] == [] (
+        echo logsLocation=!logsLocation!>>%jmeterConf%\custom_properties\dir_locals.config
+        call:get_log_time INFO "All logs for JMeter will be stored in %logsLocation%. If you require this location to be different, edit the systemLog entry in %jmeterConf%\custom_properties\dir_locals.config"
+    ) else (
+	    call:get_log_time ERR "Unable to create and verify logging folder. Please ensure user has read write access to $logsLocation$ and sub directories.
 		pause
 		goto:early_exit
-	}
+	)
+
+    dir %dataLocation% > nul 2>&1
+    if "%errorlevel%" == "0" if not [%dataLocation%] == [] (
+        goto:dataLocation
+        exit /b
+    )
+    mkdir %jmeterConf%\..\data 2> nul
+    pushd %jmeterConf%\..\data
+        set dataLocation=!cd!
+    popd
+    :dataLocation
+	if "%errorlevel%" == "0" if not [%dataLocation%] == [] (
+        echo dataLocation=!dataLocation!>>%jmeterConf%\custom_properties\dir_locals.config
+        call:get_log_time INFO "All data for JMeter will be taken from %dataLocation%. If you require this location to be different, edit the dataLocation entry in %jmeterConf%\custom_properties\dir_locals.config"
+    ) else (
+	    call:get_log_time ERR "Unable to create and verify data folder. Please ensure user has read write access to $dataLocation$ and sub directories.
+		pause
+		goto:early_exit
+	)
 exit /b
 :set_jmeterHome <jmeterConf>
     call:get_log_time INFO "Looking for an instance of jmeter. If more than 1 version is present, the wrong one may be used. Please ensure only 1 is extracted on the system."
@@ -114,7 +132,7 @@ exit /b
     call:set_jmeterHome %jmeterConf%
 	call:check_java %jmeterHome% %jmeterConf%
 	
-    call:setup_directories %jmeterHome% %systemLogs%
+    call:setup_directories %jmeterHome% %logsLocation%
     pause
 :early_exit
 exit /b

@@ -27,15 +27,15 @@
       </ThreadGroup>
       <hashTree>
         <CSVDataSet guiclass="TestBeanGUI" testclass="CSVDataSet" testname="CSV Data Set Config" enabled="true">
-          <stringProp name="delimiter">,</stringProp>
-          <stringProp name="fileEncoding"></stringProp>
-          <stringProp name="filename">${__P(dataLocation)}/${__P(runType,)}${__TestPlanName}.csv</stringProp>
+          <stringProp name="delimiter">|</stringProp>
+          <stringProp name="fileEncoding">UTF-8</stringProp>
+          <stringProp name="filename">${__P(dataLocation)}/../jmeter_conf/utils/${__P(runType,)}${__TestPlanName}.csv</stringProp>
           <boolProp name="ignoreFirstLine">false</boolProp>
           <boolProp name="quotedData">false</boolProp>
           <stringProp name="recycle">${__javaScript(s=(props.get(&quot;runType&quot;) == &quot;NFT&quot;);s.toString().charAt(0).toUpperCase()+s.toString().slice(1))}</stringProp>
           <stringProp name="shareMode">shareMode.all</stringProp>
           <stringProp name="stopThread">${__javaScript(s=(props.get(&quot;runType&quot;) != &quot;NFT&quot;);s.toString().charAt(0).toUpperCase()+s.toString().slice(1))}</stringProp>
-          <stringProp name="variableNames"></stringProp>
+          <stringProp name="variableNames">file,tense,context,adjective</stringProp>
         </CSVDataSet>
         <hashTree/>
         <CookieManager guiclass="CookiePanel" testclass="CookieManager" testname="HTTP Cookie Manager" enabled="true">
@@ -50,15 +50,22 @@
         </DNSCacheManager>
         <hashTree/>
         <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="HTTP Request" enabled="true">
-          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="User Defined Variables" enabled="true">
-            <collectionProp name="Arguments.arguments"/>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">${file}/${tense}/${context}/${adjective}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
           </elementProp>
           <stringProp name="HTTPSampler.domain">example.com</stringProp>
           <stringProp name="HTTPSampler.port"></stringProp>
           <stringProp name="HTTPSampler.protocol"></stringProp>
           <stringProp name="HTTPSampler.contentEncoding"></stringProp>
           <stringProp name="HTTPSampler.path"></stringProp>
-          <stringProp name="HTTPSampler.method">GET</stringProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
           <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
           <boolProp name="HTTPSampler.auto_redirects">false</boolProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
@@ -102,7 +109,7 @@
             <connectTime>true</connectTime>
           </value>
         </objProp>
-        <stringProp name="filename">${__P(logs_location)}/${__TestPlanName}/${__TestPlanName}-${__time(yyyyMMddHHmm)}-Summary.csv</stringProp>
+        <stringProp name="filename">${__P(logsLocation)}/${__TestPlanName}/${__TestPlanName}-${__time(yyyyMMddHHmm)}-Summary.csv</stringProp>
       </ResultCollector>
       <hashTree/>
       <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="Error Log Tree" enabled="true">
@@ -142,7 +149,7 @@
             <connectTime>true</connectTime>
           </value>
         </objProp>
-        <stringProp name="filename">${__P(logs_location)}/${__TestPlanName}/${__TestPlanName}-${__time(yyyyMMddHHmm)}-Error_Log.xml</stringProp>
+        <stringProp name="filename">${__P(logsLocation)}/${__TestPlanName}/${__TestPlanName}-${__time(yyyyMMddHHmm)}-Error_Log.xml</stringProp>
       </ResultCollector>
       <hashTree/>
       <ResultCollector guiclass="ViewResultsFullVisualizer" testclass="ResultCollector" testname="Full Log Tree - (Disable when not running in GUI)" enabled="true">
@@ -182,7 +189,7 @@
             <connectTime>true</connectTime>
           </value>
         </objProp>
-        <stringProp name="filename">${__P(logs_location)}/${__TestPlanName}/${__TestPlanName}-${__time(yyyyMMddHHmm)}-Full_Log.xml</stringProp>
+        <stringProp name="filename">${__P(logsLocation)}/${__TestPlanName}/${__TestPlanName}-${__time(yyyyMMddHHmm)}-Full_Log.xml</stringProp>
       </ResultCollector>
       <hashTree/>
     </hashTree>
