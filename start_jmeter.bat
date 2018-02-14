@@ -74,7 +74,7 @@ goto:eof
 
     if [%systemLogs%] == [] set dirChecks=1
     dir %systemLogs% > nul 2>&1
-    set dirChecks=%errorlevel%
+    set dirChecks=%dirChecks%%errorlevel%
     dir %jmeterHome%\keystores > nul 2>&1
     set dirChecks=%dirChecks%%errorlevel%
     

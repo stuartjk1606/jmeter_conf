@@ -71,7 +71,9 @@ popd
         set systemLogs=!cd!
     popd
 	mkdir %systemLogs%\jmeter_logs
-    if "%errorlevel%" == "0" if not [%systemLogs%] == [] (
+    pushd %systemLogs%\jmeter_logs
+	popd
+	if "%errorlevel%" == "0" if not [%systemLogs%] == [] (
         :systemLogs
         echo systemLogs=!systemLogs!>>%jmeterConf%\custom_properties\dir_locals.config
         call:get_log_time INFO "All logs for JMeter will be stored in %systemLogs%. If you require this location to be different, edit the systemLog entry in %jmeterConf%\custom_properties\dir_locals.config"
