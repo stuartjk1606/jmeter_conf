@@ -102,6 +102,7 @@ exit /b
     if not "%jmeterFound%" == "1" (
         call:get_log_time ERROR "Unable to determine location of a Jmeter installation. Please check JMeter is available on this system."
         echo jmeterHome=nul>%jmeterConf%\custom_properties\dir_locals.config
+		goto:early_exit
     )
         
 exit /b
