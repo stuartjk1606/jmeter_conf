@@ -78,7 +78,11 @@ popd
         echo systemLogs=!systemLogs!>>%jmeterConf%\custom_properties\dir_locals.config
         call:get_log_time INFO "All logs for JMeter will be stored in %systemLogs%. If you require this location to be different, edit the systemLog entry in %jmeterConf%\custom_properties\dir_locals.config"
         exit /b
-    )
+    ) else {
+	    call:get_log_time ERR "Unable to create and verify logging folder. Please ensure user has read write access to $systemLoga$ and sub directories.
+		pause
+		goto:early_exit
+	}
 exit /b
 :set_jmeterHome <jmeterConf>
     call:get_log_time INFO "Looking for an instance of jmeter. If more than 1 version is present, the wrong one may be used. Please ensure only 1 is extracted on the system."
@@ -111,4 +115,5 @@ exit /b
 	
     call:setup_directories %jmeterHome% %systemLogs%
     pause
+:early_exit
 exit /b
