@@ -93,6 +93,7 @@ exit /b
 	if %currVersion% lss %minVersion% (
 		call:get_log_time ERR "Java version in %javaHome% (%currVersion%) is below minimum required for this version of JMeter (%minVersion%). Either install a newer version of java or if already installed but not found, please manually set javaHome in %jmeterConf%\custom_properties\dir_locals.config"
 		set javaOk=0
+		pause
 	) else (
 		call:get_log_time INFO "Java version in %javaHome% (%currVersion%) is at a high enough version to support this JMeter"
 		set javaOk=1
