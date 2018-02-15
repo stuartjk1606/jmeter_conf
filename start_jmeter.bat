@@ -26,7 +26,11 @@ exit /b
 
 rem is_it_a_property, find_replace and get_mod_dates are specific to windows shell version and handle the way for loops are dealt with. 
 
-:is_it_a_property <newString> <oldString> <outputString>
+:is_it_a_property
+
+rem <newString> <oldString> <outputString>
+
+rem ignores values that are commented out or begins with a space or tab
 
     set outputString=%3
     if not "%outputString:~1,1%" == "#" if not "%outputString:~1,1%" == " " if not "%outputString:~1,1%" == "	" (
@@ -35,7 +39,11 @@ rem is_it_a_property, find_replace and get_mod_dates are specific to windows she
 
 exit /b
 
-:find_replace <newString> <oldString> <outputString> 
+:find_replace
+
+rem <newString> <oldString> <outputString> 
+
+rem replaces strings in the parameters and outputs the result. A bit iffy but works for printing out the parameters to custom files.
 
 	setlocal
     set newString=%~1
@@ -46,7 +54,11 @@ exit /b
     
 exit /b
 
-:get_mod_dates <file> <variableName> <searchString>
+:get_mod_dates
+
+rem <file> <variableName> <searchString>
+
+rem returns the modified date of a file. search string is a required argument to ensure the correct line out of dir is used
 
     set fileModDate=0
     for /F "tokens=1,2,*" %%i in ('DIR /T:W %1 ^| findstr "\.%3"') do set fileModDate=%%i %%j
@@ -58,7 +70,11 @@ exit /b
 
 exit /b
 
-:get_log_time <logLevel> <logMessage>
+:get_log_time
+
+rem <logLevel> <logMessage>
+
+rem a simple logger function that outputs logDateTime logLevel logMessage
 
     set logDateTime=%date:~6,4%/%date:~3,2%/%date:~0,2%-%time:~0,2%:%time:~3,2%:%time:~6,2%
     set logDateTime=%logDateTime: =0%
@@ -69,12 +85,20 @@ exit /b
 
 :check_instance <instance>
 
+rem checks if value in instance field is a numerical value between 0 and 9.
+
     set isNumber=1
     for /f "delims=0123456789" %%i in ("%1") do set /a isNumber=%isNumber%-1
     
 exit /b
 
-:check_directories <logsLocation> <jmeterHome>
+:check_directories
+
+rem <logsLocation> <jmeterHome>
+
+rem checks if the required log, data and keystore files are present.
+
+rem todo Additional checks need to be added at some point to ensure read/write access available to user but not easy in Windows
 
     if [%logsLocation%] == [] set dirChecks=1
     dir %logsLocation% > nul 2>&1
@@ -84,7 +108,11 @@ exit /b
     
 exit /b
 
-:check_java <jmeterHome> <javaHome>
+:check_java
+
+rem <jmeterHome> <javaHome>
+
+rem retrieves the minimal version of java required by jmeter then checks against the version of java configured in dir_locals.config
 
 	set minVersion=0
 	set currVersion=0
@@ -101,24 +129,41 @@ exit /b
 
 exit /b
 
-:check_prop_files <jmeterConf> <jmeterHome> <thisScript>
+:check_prop_files
 
-    set jmeterConfScript=%thisScript%
-    set jmeterPropertiesFile=%jmeterConf%\instance_properties\jmeter%instance%.properties
-    set jmeterSourceProps=%jmeterHome%\jmeter.properties
-    set jmeterCustomProps=%jmeterConf%\custom_properties\custom_jmeter.properties
-    set systemPropertiesFile=%jmeterConf%\instance_properties\system%instance%.properties
-    set systemSourceProps=%jmeterHome%\system.properties
-    set systemCustomProps=%jmeterConf%\custom_properties\custom_system.properties
-    set userPropertiesFile=%jmeterConf%\instance_properties\user%instance%.properties
-    set userSourceProps=%jmeterHome%\user.properties
-    set userCustomProps=%jmeterConf%\custom_properties\custom_user.properties
+rem <jmeterConf> <jmeterHome> <thisScript>
+
+rem checks the custom properties files against all source files
+
+	rem files that would affect what is written to the instance properties files.
+
     set jmeterHostsFile=%jmeterConf%\custom_properties\jmeter_hosts.dat
     set dirLocalsFile=%jmeterConf%\custom_properties\dir_locals.config
+
+	rem default jmeter source properties files
+
+    set jmeterSourceProps=%jmeterHome%\jmeter.properties
+    set systemSourceProps=%jmeterHome%\system.properties
+    set userSourceProps=%jmeterHome%\user.properties
+
+	rem your custom source properties files to be writted to all instances
+	
+    set jmeterCustomProps=%jmeterConf%\custom_properties\custom_jmeter.properties
+    set systemCustomProps=%jmeterConf%\custom_properties\custom_system.properties
+    set userCustomProps=%jmeterConf%\custom_properties\custom_user.properties
+
+	rem the instance properties files to be compared and then overwritten if out of date
+	
+    set jmeterPropertiesFile=%jmeterConf%\instance_properties\jmeter%instance%.properties
+    set systemPropertiesFile=%jmeterConf%\instance_properties\system%instance%.properties
+    set userPropertiesFile=%jmeterConf%\instance_properties\user%instance%.properties
+
+	rem grab all the modified dates for the files identified above.
+	
     call:get_mod_dates %jmeterPropertiesFile% jmeterPropertiesFileDate properties 2> nul
     call:get_mod_dates %jmeterSourceProps% jmeterSourcePropsDate properties 2> nul
     call:get_mod_dates %jmeterCustomProps% jmeterCustomPropsDate properties 2> nul
-    call:get_mod_dates %jmeterConfScript% jmeterConfScriptDate bat 2> nul
+    call:get_mod_dates %thisScript% thisScriptDate bat 2> nul
     call:get_mod_dates %systemPropertiesFile% systemPropertiesFileDate properties 2> nul
     call:get_mod_dates %systemSourceProps% systemSourcePropsDate properties 2> nul
     call:get_mod_dates %systemCustomProps% systemCustomPropsDate properties 2> nul
@@ -129,21 +174,23 @@ exit /b
     call:get_mod_dates %dirLocalsFile% dirLocalsFileDate config 2> nul
     set needsRebuild=0
     
-    for %%d in (%jmeterSourcePropsDate% %jmeterCustomPropsDate% %jmeterConfScriptDate% %jmeterHostsFileDate% %dirLocalsFileDate%) do (
+	rem compare the instance files with any source files and mark as needing rebuild.
+	
+    for %%d in (%jmeterSourcePropsDate% %jmeterCustomPropsDate% %thisScriptDate% %jmeterHostsFileDate% %dirLocalsFileDate%) do (
         if %jmeterPropertiesFileDate% lss %%d (
             set /a needsRebuild=1
             call:get_log_time WARN "A source file has been updated since jmeter%instance%.properties was created. Custom properties files will be rebuilt."
 			exit /b
         )
     )
-    for %%d in (%systemSourcePropsDate% %systemCustomPropsDate% %jmeterConfScriptDate%) do (
+    for %%d in (%systemSourcePropsDate% %systemCustomPropsDate% %thisScriptDate%) do (
         if %systemPropertiesFileDate% lss %%d (
             set /a needsRebuild=1
             call:get_log_time WARN "A source file has been updated since system%instance%.properties was created. Custom properties files will be rebuilt."
 			exit /b
         )
     )
-    for %%d in (%userSourcePropsDate% %userCustomPropsDate% %jmeterConfScriptDate%) do (
+    for %%d in (%userSourcePropsDate% %userCustomPropsDate% %thisScriptDate%) do (
         if %userPropertiesFileDate% lss %%d (
             set /a needsRebuild=1
             call:get_log_time WARN "A source file has been updated since user%instance%.properties was created. Custom properties files will be rebuilt."
@@ -152,7 +199,12 @@ exit /b
     )
     
 exit /b
-:import_prop_files <jmeterConf> <jmeterHome> <instance>
+
+:import_prop_files
+
+rem <jmeterConf> <jmeterHome> <instance>
+
+rem imports the default jmeter source properties files into the instance files. only writes valid none commented properties identified using is_it_a_property
 
 	set dataLocation=/%dataLocation:\=/%/
     set jmeterConfVar=/%jmeterConf:\=/%/
@@ -183,7 +235,12 @@ exit /b
     
 exit /b
 
-:update_prop_files <jmeterConf> <instance>
+:update_prop_files
+
+rem <jmeterConf> <instance>
+
+rem imports any custom properties files found in jmeter_conf/custom/properties into instance properties.
+rem Originally replaced placeholders for variables similar to this label in the bash script but easier to include variable definitions in the custom properties files.
 
     set jmeterConfVar=/%jmeterConf:\=/%/
     set jmeterHomeVar=/%jmeterHome:\=/%/
@@ -226,7 +283,11 @@ exit /b
 
 exit /b
 
-:set_rmi <jmeterConf> <rmiport> <instance>
+:set_rmi
+
+rem <jmeterConf> <rmiport> <instance>
+
+rem calculates the RMI and beanshell server ports relevant for this instance and adds them to instance properties file.
 
     call:get_log_time DEBUG "Building list of RMI hosts from jmeter_hosts.dat with port number %rmiPort%"
     set rmiHosts=
@@ -250,6 +311,8 @@ exit /b
 
 :start_jmeter
 
+rem calculates relevant memory and options based on parameters passed to it then starts jmeter.
+
     if ["%isServer%"] == ["server"] (
         set instanceType=server
         for /f "tokens=1,2,3,4,5,* delims= " %%a in ("%*") do set jmeterArgs=%%f
@@ -272,6 +335,7 @@ exit /b
 :main
 
 rem Lets make sure the arguments passed are going to start a valid instance
+
 if "%1" == "server" (
     set isServer=%1
     set instance=%2
@@ -280,17 +344,23 @@ if "%1" == "server" (
 )
 call:check_instance %instance%
 if %isNumber% == 0 (
+
     call:get_log_time ERR "Variables are set without an instance number. Please set using %thisScript% {instance} or %thisScript% server {instance}. Please note, server cannot be run without and instance and instance must be 1 or greater."
+
     exit /b
 )
 if a%isServer% == aserver (
     if a%instance% == a0 (
-        call:get_log_time ERR "Server instance 0 is invalid. Please set using %thisScript% {instance} or %thisScript% server {instance}. Please note, server cannot be run without and instance and instance must be 1 or greater."
-        exit /b
+
+		call:get_log_time ERR "Server instance 0 is invalid. Please set using %thisScript% {instance} or %thisScript% server {instance}. Please note, server cannot be run without and instance and instance must be 1 or greater."
+        
+		exit /b
     )
     if a%instance% == a (
-        call:get_log_time ERR "No server instance provided. Please set using %thisScript% {instance} or %thisScript% server {instance}. Please note, server cannot be run without and instance and instance must be 1 or greater."
-        exit /b
+        
+		call:get_log_time ERR "No server instance provided. Please set using %thisScript% {instance} or %thisScript% server {instance}. Please note, server cannot be run without and instance and instance must be 1 or greater."
+        
+		exit /b
     )
 )   
 set javaHome=C:\SWDTOOLS\JDK1.8.0_66\bin\java
@@ -313,8 +383,11 @@ if "%dirChecks%" == "00" (
     exit /b
 )
 set /a rmiPort=%baseRmiPort%+0%instance%
+
 call:get_log_time INFO "Checking existing custom files to ensure they are up to date."
+
 call:check_prop_files %jmeterConf% %jmeterHome% %instance%
+
 if not "%needsRebuild%" == "0" (
     call:get_log_time WARN "Rebuilding all properties and services files. If customisations have been made to these files since this instance was last run, please fix after starting this instance."
     call:import_prop_files "%jmeterConf%" "%jmeterHome%" %instance%
