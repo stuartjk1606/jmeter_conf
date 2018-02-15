@@ -119,7 +119,7 @@ rem retrieves the minimal version of java required by jmeter then checks against
 	for /f "tokens=2 delims=." %%a in ('type %jmeterHome%\jmeter.bat ^| findstr /c:"set MINIMAL_VERSION"') do set minVersion=%%a
 	for /f "tokens=4 delims=. " %%v in ('%javaHome%java -version 2^>^&1 ^| findstr /i "version"') do set currVersion=%%v
 	if %currVersion% lss %minVersion% (
-		call:get_log_time ERR "Java version in %javaHome% (%currVersion%) is below minimum required for this version of JMeter (%minVersion%). Either install a newer version of java or if already installed but not found, please manually set javaHome in %jmeterConf%\custom_properties\dir_locals.config"
+		call:get_log_time ERR "Java version in %javaHome% (%currVersion%) is below minimum required for this version of JMeter (%minVersion%). Either install a newer version of java or if already installed but not found, please manually set javaHome in %dirLocalsFile%"
 		set javaOk=0
 		pause
 	) else (
@@ -138,8 +138,7 @@ rem checks the custom properties files against all source files
 	rem files that would affect what is written to the instance properties files.
 
     set jmeterHostsFile=%jmeterConf%\custom_properties\jmeter_hosts.dat
-    set dirLocalsFile=%jmeterConf%\custom_properties\dir_locals.config
-
+    
 	rem default jmeter source properties files
 
     set jmeterSourceProps=%jmeterHome%\jmeter.properties
@@ -209,24 +208,21 @@ rem imports the default jmeter source properties files into the instance files. 
 	set dataLocation=/%dataLocation:\=/%/
     set jmeterConfVar=/%jmeterConf:\=/%/
     call:get_log_time DEBUG "Importing default properties files from %jmeterHome%."
-    set jmeterPropertiesFile=%jmeterConf%\instance_properties\jmeter%instance%.properties
-    set systemPropertiesFile=%jmeterConf%\instance_properties\system%instance%.properties
-    set userPropertiesFile=%jmeterConf%\instance_properties\user%instance%.properties
     echo # A custom JMeter properties file created by %thisScript% > %jmeterPropertiesFile%
-    for /f "delims=|" %%p in ( 'type %jmeterHome%\jmeter.properties' ) do (
+    for /f "delims=|" %%p in ( 'type %jmeterSourceProps%' ) do (
         if not ["%%p"] == [""] (
             call:is_it_a_property "%jmeterConfVar%" {jmeterConfVar} "%%p"  >> %jmeterPropertiesFile%
         )
     )
     echo # A custom JMeter properties file created by %thisScript% > %systemPropertiesFile%
-    for /f "delims=|" %%p in ( 'type %jmeterHome%\system.properties' ) do (
+    for /f "delims=|" %%p in ( 'type %systemSourceProps%' ) do (
         if not ["%%p"] == [""] (
             call:is_it_a_property "%jmeterConfVar%" {jmeterConfVar} "%%p"  >> %systemPropertiesFile%
         )
     )
     
     echo # A custom JMeter properties file created by %thisScript% > %userPropertiesFile%
-    for /f "delims=|" %%p in ( 'type %jmeterHome%\user.properties' ) do (
+    for /f "delims=|" %%p in ( 'type %userSourceProps%' ) do (
         if not ["%%p"] == [""] (
             call:is_it_a_property "%jmeterConfVar%" {jmeterConfVar} "%%p"  >> %userPropertiesFile%
         )
@@ -244,8 +240,6 @@ rem Originally replaced placeholders for variables similar to this label in the 
 
     set jmeterConfVar=/%jmeterConf:\=/%/
     set jmeterHomeVar=/%jmeterHome:\=/%/
-    set jmeterPropertiesFile=%jmeterConf%\instance_properties\jmeter%instance%.properties
-    set jmeterCustomProps=%jmeterConf%\custom_properties\custom_jmeter.properties
     call:get_log_time DEBUG "merging custom properties with default jmeter.properties. custom properties take priority if there is a confict."
     for /f "delims=|" %%p in ( 'type %jmeterCustomProps%' ) do (
         if not ["%%p"] == [""] (
@@ -255,8 +249,6 @@ rem Originally replaced placeholders for variables similar to this label in the 
 	
     call:get_log_time DEBUG "merging custom properties with default jmeter.properties complete."
 
-    set systemPropertiesFile=%jmeterConf%\instance_properties\system%instance%.properties
-    set systemCustomProps=%jmeterConf%\custom_properties\custom_system.properties
     call:get_log_time DEBUG "merging custom properties with default system.properties. custom properties take priority if there is a confict."
     for /f "delims=|" %%p in ( 'type %systemCustomProps%' ) do (
         if not ["%%p"] == [""] (
@@ -265,9 +257,6 @@ rem Originally replaced placeholders for variables similar to this label in the 
     )
 	
     call:get_log_time DEBUG "merging custom properties with default system.properties complete."
-
-    set userPropertiesFile=%jmeterConf%\instance_properties\user%instance%.properties
-    set userCustomProps=%jmeterConf%\custom_properties\custom_user.properties
 
     call:get_log_time DEBUG "merging custom properties with default user.properties. custom properties take priority if there is a confict."
 
@@ -291,7 +280,7 @@ rem calculates the RMI and beanshell server ports relevant for this instance and
 
     call:get_log_time DEBUG "Building list of RMI hosts from jmeter_hosts.dat with port number %rmiPort%"
     set rmiHosts=
-    for /f %%h in ( 'type %jmeterConf%\custom_properties\jmeter_hosts.dat' ) do (
+    for /f %%h in ( 'type %jmeterHostsFile%' ) do (
         echo %%h | findstr [:] > nul 2>&1
         if !errorlevel! == 0 (
 			set rmiHosts=!rmiHosts!%%h,
@@ -328,7 +317,7 @@ rem calculates relevant memory and options based on parameters passed to it then
     set logDateString=%logDateString: =0%
     set java_opts=-Xms%HEAP% -Xmx%HEAP% -XX:NewSize=128m -XX:MaxNewSize=128m
     call:get_log_time INFO "Starting jmeter %instance% as %instanceType%."
-    %javaHome%java %java_opts% -XX:+HeapDumpOnOutOfMemoryError -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=50 -XX:MaxTenuringThreshold=2  -XX:+CMSClassUnloadingEnabled -jar %jmeterHome%/ApacheJMeter.jar %jmeterProps% -j %logsLocation%\jmeter_logs\jmeter%instance%-%USERNAME%-%logDateString%-%instanceType%.log -JlogsLocation=%logsLocation% -p %jmeterConf%\instance_properties\jmeter%instance%.properties %jmeterArgs%
+    %javaHome%java %java_opts% -XX:+HeapDumpOnOutOfMemoryError -XX:SurvivorRatio=8 -XX:TargetSurvivorRatio=50 -XX:MaxTenuringThreshold=2  -XX:+CMSClassUnloadingEnabled -jar %jmeterHome%/ApacheJMeter.jar %jmeterProps% -j %logsLocation%\jmeter_logs\jmeter%instance%-%USERNAME%-%logDateString%-%instanceType%.log -JlogsLocation=%logsLocation% -p %jmeterPropertiesFile% %jmeterArgs%
 
 exit /b
 
@@ -363,11 +352,11 @@ if a%isServer% == aserver (
 		exit /b
     )
 )   
-set javaHome=C:\SWDTOOLS\JDK1.8.0_66\bin\java
 pushd %~dp0
     set jmeterConf=%cd%
 popd
-for /f "tokens=*" %%p in ('type %jmeterConf%\custom_properties\dir_locals.config') do set %%p
+set dirLocalsFile=%jmeterConf%\custom_properties\dir_locals.config
+for /f "tokens=*" %%p in ('type %dirLocalsFile%') do set %%p
 for /f "tokens=*" %%p in ('type %jmeterConf%\custom_properties\jmeter_general.config') do set %%p
 call:check_directories %logsLocation% %jmeterHome% %thisScript%
 call:check_java %jmeterHome% %javaHome%
