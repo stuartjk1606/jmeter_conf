@@ -306,13 +306,17 @@ rem calculates relevant memory and options based on parameters passed to it then
         set instanceType=server
         for /f "tokens=1,2,3,4,5,* delims= " %%a in ("%*") do set jmeterArgs=%%f
         set jmeterProps=-Dserver_port=%rmiPort% -s
-        set HEAP=%serverHeap%
+		if ["%HEAP%"] == [""] (
+			set HEAP=%serverHeap%
+		)
     ) else (
         set instanceType=client
         for /f "tokens=1,2,3,4,* delims= " %%a in ("%*") do set jmeterArgs=%%e
         set jmeterProps=-Jproxy.cert.file=keystores/%USERNAME%.jmeter.keystore
-        set HEAP=%clientHEAP%
-    )
+		if ["%HEAP%"] == [""] (
+			set HEAP=%clientHEAP%
+		)
+	)
     set logDateString=%date:~6,4%%date:~3,2%%date:~0,2%%time:~0,2%%time:~3,2%%time:~6,2%
     set logDateString=%logDateString: =0%
     set java_opts=-Xms%HEAP% -Xmx%HEAP% -XX:NewSize=128m -XX:MaxNewSize=128m
