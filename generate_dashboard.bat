@@ -7,5 +7,6 @@ pushd %summaryFile%\..\dashboards
     set dashboardDir=%cd%\%logDateTime%
     mkdir %dashboardDir%
 popd
-call jmeter.bat -g "%summaryFile%" -o "%dashboardDir%"
+set HEAP=1g
+call start_jmeter.bat 1 -g "%summaryFile%" -o "%dashboardDir%"
 start "" %dashboardDir%\index.html
