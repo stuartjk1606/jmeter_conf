@@ -1,4 +1,5 @@
 *.swp
+custom_properties/custom_*.properties
 instance_properties/*.properties
 instance_services/*.*
 keystores/*.*
